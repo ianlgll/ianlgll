@@ -480,12 +480,19 @@ footer { padding: 3rem 10%; margin-top: 4rem; text-align: center; color: var(--f
   var el = document.getElementById('total'), target = +el.dataset.target;
   var fmt = function (n) { return Math.round(n).toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' '); };
   var counted = false;
-  window.runCounter = function () {
-    if (counted) return; counted = true;
-    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function countUp() {
     var t0 = null;
     var step = function (t) { if (!t0) t0 = t; var p = Math.min((t - t0) / 1100, 1); el.textContent = fmt(target * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); };
     el.textContent = '0'; requestAnimationFrame(step);
+  }
+  // Le compteur démarre quand il est visible à l'écran (après l'intro)
+  window.runCounter = function () {
+    if (counted) return; counted = true;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    el.textContent = '0';
+    if (!('IntersectionObserver' in window)) { countUp(); return; }
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { io.disconnect(); setTimeout(countUp, 250); } }); }, { threshold: .6 });
+    io.observe(el.closest('.counter') || el);
   };
 
   // Visuel bleu / orange dessiné en code (grain compris)
